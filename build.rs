@@ -11,7 +11,8 @@ pub struct CrateInfo<'a> {
 "#;
 
 fn main() {
-    let raw_lock = std::fs::read_to_string("Cargo.lock").unwrap();
+    let lock_dir = std::env::var("PKG_MANIFEST_DIR").unwrap_or(".".to_owned());
+    let raw_lock = std::fs::read_to_string(&std::path::Path::new(&lock_dir).join("Cargo.lock")).unwrap();
     let parsed_lock = raw_lock.parse::<toml::Value>().unwrap();
 
     let mut packages = Vec::new();
