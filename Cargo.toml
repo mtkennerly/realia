@@ -1,0 +1,22 @@
+[package]
+name = "realia"
+version = "0.1.0"
+authors = ["mtkennerly <mtkennerly@gmail.com>"]
+edition = "2018"
+description = "Extra conditional compilation macros"
+repository = "https://github.com/mtkennerly/realia"
+readme = "README.md"
+license = "MIT"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.18"
+quote = "1.0.7"
+syn = { version = "1.0.33", features = ["full"] }
+version-compare = "0.0.10"
+which = "4.0.1"
+
+[build-dependencies]
+toml = "0.5.6"
