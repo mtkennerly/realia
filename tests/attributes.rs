@@ -167,6 +167,6 @@ fn attr_const() {
     fn foo() -> bool {
         true
     }
-    const positive: bool = foo();
-    assert!(positive);
+    #[allow(dead_code)]
+    const POSITIVE: bool = foo();
 }
