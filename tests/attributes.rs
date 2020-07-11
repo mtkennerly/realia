@@ -1,5 +1,3 @@
-use realia;
-
 #[test]
 fn crate_available() {
     #[realia::crate_available("syn")]
