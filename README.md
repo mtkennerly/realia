@@ -4,14 +4,16 @@ This crate provides macros for conditional compilation based on various checks,
 such as crate versions and environment variables. These macros are analogous to
 `#[cfg(...)]` and `#[cfg_attr(...)]`.
 
-Realia is inspired by and heavily based on [rustversion](https://crates.io/crates/rustversion).
+Realia is inspired by and heavily based on [rustversion](https://crates.io/crates/rustversion),
+as well as [cargo-tree](https://github.com/sfackler/cargo-tree).
 
 ## Attributes
 Primary:
 
-* Crate info, based on the content of Cargo.lock:
+* Crate info, based on the output of `cargo metadata` (only applicable to
+  your crate itself and its direct dependencies):
   * `#[realia::crate_available("foo")]`
-    * Checks if any version of the crate is installed.
+    * Checks if any version of the `foo` crate is installed.
   * `#[realia::crate_equals("foo", "1.2.3")]`
     * Checks if the `foo` crate is installed with exactly version 1.2.3.
   * `#[realia::crate_since("foo", "1.2.3")]`

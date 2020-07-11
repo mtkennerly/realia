@@ -7,6 +7,7 @@ description = "Extra conditional compilation macros"
 repository = "https://github.com/mtkennerly/realia"
 readme = "README.md"
 license = "MIT"
+build = "build/build.rs"
 
 [lib]
 proc-macro = true
@@ -19,4 +20,9 @@ version-compare = "0.0.10"
 which = "4.0.1"
 
 [build-dependencies]
+anyhow = "1.0.31"
+cargo_metadata = "0.10.0"
+serde_json = "1.0.56"
+structopt = "0.3.15"
+target-spec = "0.4.0"
 toml = "0.5.6"
