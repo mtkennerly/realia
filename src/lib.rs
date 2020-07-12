@@ -1,6 +1,8 @@
 //! Realia provides attribute macros for conditional compilation,
 //! analogous to `#[cfg(...)]` and `#[cfg_attr(...)]`.
 
+#![allow(clippy::needless_doctest_main)]
+
 extern crate proc_macro;
 
 mod attr;
@@ -40,7 +42,7 @@ use syn::{parse_macro_input, ItemFn, Result};
 /// ```
 #[proc_macro_attribute]
 pub fn env(args: TokenStream, input: TokenStream) -> TokenStream {
-    cfg("not", args, input)
+    cfg("env", args, input)
 }
 
 /// Checks whether an executable exists on the `PATH`.
@@ -63,7 +65,7 @@ pub fn env(args: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn cmd(args: TokenStream, input: TokenStream) -> TokenStream {
-    cfg("not", args, input)
+    cfg("cmd", args, input)
 }
 
 /// Inverts another condition.
@@ -91,7 +93,7 @@ pub fn not(args: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn any(args: TokenStream, input: TokenStream) -> TokenStream {
-    cfg("not", args, input)
+    cfg("any", args, input)
 }
 
 /// Checks if multiple conditions are met.
@@ -105,7 +107,7 @@ pub fn any(args: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn all(args: TokenStream, input: TokenStream) -> TokenStream {
-    cfg("not", args, input)
+    cfg("all", args, input)
 }
 
 fn cfg(top: &str, args: TokenStream, input: TokenStream) -> TokenStream {

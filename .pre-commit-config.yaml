@@ -18,6 +18,6 @@ repos:
       - id: clippy
         name: clippy
         language: system
-        entry: cargo clippy -- -D warnings
+        entry: cargo clippy --tests -- -D warnings
         types: [rust]
         pass_filenames: false

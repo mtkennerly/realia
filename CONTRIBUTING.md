@@ -1,11 +1,13 @@
 ## Development
 Rust 1.44.0 or newer is recommended.
 
+For testing, you'll need to set the environment variables defined in `.envrc`.
+
 * Run tests:
-  * `REALIA_EMPTY='' REALIA_FULL=1 cargo test`
+  * `cargo test`
 * Linting:
   * `cargo fmt`
-  * `cargo clippy -- -D warnings`
+  * `cargo clippy --tests -- -D warnings`
 * Activate pre-commit hooks (requires Python):
   ```
   pip install --user pre-commit
