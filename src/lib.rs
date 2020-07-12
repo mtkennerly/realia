@@ -22,14 +22,8 @@ macro_rules! res {
 res!(not);
 res!(any);
 res!(all);
-res!(crate_available);
-res!(crate_equals);
-res!(crate_since);
-res!(crate_before);
-res!(crate_from_registry);
 res!(env);
-res!(env_equals);
-res!(command);
+res!(cmd);
 
 fn cfg(top: &str, args: TokenStream, input: TokenStream) -> TokenStream {
     match try_cfg(top, args, input) {

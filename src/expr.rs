@@ -1,22 +1,14 @@
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::{parenthesized, LitStr, Token};
-use version_compare::{CompOp, VersionCompare};
-
-include!(concat!(env!("OUT_DIR"), "/crate_info.rs"));
 
 pub enum Expr {
     Not(Box<Expr>),
     Any(Vec<Expr>),
     All(Vec<Expr>),
-    CrateAvailable(String),
-    CrateEquals(String, String),
-    CrateSince(String, String),
-    CrateBefore(String, String),
-    CrateFromRegistry(String),
-    Env(String),
+    EnvExists(String),
     EnvEquals(String, String),
-    Command(String),
+    CmdExists(String),
 }
 
 impl Expr {
@@ -27,29 +19,12 @@ impl Expr {
             Not(expr) => !expr.eval(),
             Any(exprs) => exprs.iter().any(|e| e.eval()),
             All(exprs) => exprs.iter().all(|e| e.eval()),
-            CrateAvailable(name) => CRATES.iter().any(|x| x.name == name),
-            CrateEquals(name, version) => CRATES
-                .iter()
-                .any(|x| x.name == name && VersionCompare::compare_to(&x.version, &version, &CompOp::Eq).unwrap()),
-            CrateSince(name, version) => CRATES
-                .iter()
-                .any(|x| x.name == name && VersionCompare::compare_to(&x.version, &version, &CompOp::Ge).unwrap()),
-            CrateBefore(name, version) => CRATES
-                .iter()
-                .any(|x| x.name == name && VersionCompare::compare_to(&x.version, &version, &CompOp::Lt).unwrap()),
-            CrateFromRegistry(name) => CRATES.iter().any(|x| {
-                x.name == name
-                    && match x.source {
-                        Some(source) => source.starts_with("registry+"),
-                        _ => false,
-                    }
-            }),
-            Env(name) => std::env::var(name).is_ok(),
+            EnvExists(name) => std::env::var(name).is_ok(),
             EnvEquals(name, value) => match std::env::var(name) {
                 Ok(x) => &x == value,
                 _ => false,
             },
-            Command(name) => which::which(name).is_ok(),
+            CmdExists(name) => which::which(name).is_ok(),
         }
     }
 }
@@ -60,14 +35,8 @@ mod keyword {
     syn::custom_keyword!(not);
     syn::custom_keyword!(any);
     syn::custom_keyword!(all);
-    syn::custom_keyword!(crate_available);
-    syn::custom_keyword!(crate_equals);
-    syn::custom_keyword!(crate_since);
-    syn::custom_keyword!(crate_before);
-    syn::custom_keyword!(crate_from_registry);
     syn::custom_keyword!(env);
-    syn::custom_keyword!(env_equals);
-    syn::custom_keyword!(command);
+    syn::custom_keyword!(cmd);
 }
 
 impl Parse for Expr {
@@ -79,57 +48,14 @@ impl Parse for Expr {
             Self::parse_any(input)
         } else if lookahead.peek(keyword::all) {
             Self::parse_all(input)
-        } else if lookahead.peek(keyword::crate_available) {
-            Self::parse_crate_available(input)
-        } else if lookahead.peek(keyword::crate_equals) {
-            Self::parse_crate_equals(input)
-        } else if lookahead.peek(keyword::crate_since) {
-            Self::parse_crate_since(input)
-        } else if lookahead.peek(keyword::crate_before) {
-            Self::parse_crate_before(input)
-        } else if lookahead.peek(keyword::crate_from_registry) {
-            Self::parse_crate_from_registry(input)
         } else if lookahead.peek(keyword::env) {
             Self::parse_env(input)
-        } else if lookahead.peek(keyword::env_equals) {
-            Self::parse_env_equals(input)
-        } else if lookahead.peek(keyword::command) {
-            Self::parse_command(input)
+        } else if lookahead.peek(keyword::cmd) {
+            Self::parse_cmd(input)
         } else {
             Err(lookahead.error())
         }
     }
-}
-
-macro_rules! def_parser_1_string {
-    ($fn_name:ident, $name:ident, $output:expr) => {
-        fn $fn_name(input: ParseStream) -> Result<Self> {
-            input.parse::<keyword::$name>()?;
-
-            let paren;
-            parenthesized!(paren in input);
-            let arg1: LitStr = paren.parse()?;
-            paren.parse::<Option<Token![,]>>()?;
-
-            Ok($output(arg1.value()))
-        }
-    };
-}
-
-macro_rules! def_parser_2_strings {
-    ($fn_name:ident, $name:ident, $output:expr) => {
-        fn $fn_name(input: ParseStream) -> Result<Self> {
-            input.parse::<keyword::$name>()?;
-
-            let paren;
-            parenthesized!(paren in input);
-            let arg1: LitStr = paren.parse()?;
-            paren.parse::<Token![,]>()?;
-            let arg2: LitStr = paren.parse()?;
-
-            Ok($output(arg1.value(), arg2.value()))
-        }
-    };
 }
 
 impl Expr {
@@ -164,12 +90,28 @@ impl Expr {
         Ok(Expr::All(exprs.into_iter().collect()))
     }
 
-    def_parser_1_string!(parse_crate_available, crate_available, Expr::CrateAvailable);
-    def_parser_2_strings!(parse_crate_equals, crate_equals, Expr::CrateEquals);
-    def_parser_2_strings!(parse_crate_since, crate_since, Expr::CrateSince);
-    def_parser_2_strings!(parse_crate_before, crate_before, Expr::CrateBefore);
-    def_parser_1_string!(parse_crate_from_registry, crate_from_registry, Expr::CrateFromRegistry);
-    def_parser_1_string!(parse_env, env, Expr::Env);
-    def_parser_2_strings!(parse_env_equals, env_equals, Expr::EnvEquals);
-    def_parser_1_string!(parse_command, command, Expr::Command);
+    fn parse_env(input: ParseStream) -> Result<Self> {
+        input.parse::<keyword::env>()?;
+
+        let paren;
+        parenthesized!(paren in input);
+        let arg1: LitStr = paren.parse()?;
+        match paren.parse::<Token![,]>() {
+            Ok(_) => {
+                let arg2: LitStr = paren.parse()?;
+                Ok(Expr::EnvEquals(arg1.value(), arg2.value()))
+            }
+            Err(_) => Ok(Expr::EnvExists(arg1.value())),
+        }
+    }
+
+    fn parse_cmd(input: ParseStream) -> Result<Self> {
+        input.parse::<keyword::cmd>()?;
+
+        let paren;
+        parenthesized!(paren in input);
+        let arg1: LitStr = paren.parse()?;
+
+        Ok(Expr::CmdExists(arg1.value()))
+    }
 }
