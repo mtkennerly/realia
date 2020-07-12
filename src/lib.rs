@@ -34,7 +34,9 @@ use syn::{parse_macro_input, ItemFn, Result};
 /// fn example() {
 ///     println!("CI is defined");
 /// }
+/// ```
 ///
+/// ```
 /// #[realia::env("CI", "true")]
 /// fn example() {
 ///     println!("CI is set to true");
