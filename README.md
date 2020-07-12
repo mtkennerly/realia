@@ -19,13 +19,13 @@ Primary:
 
 The above can be refined or augmented by these additional attributes:
 
-* `#[realia::not(env("foo"))]`
+* `#[realia::not(env("FOO"))]`
   * Inverts the condition.
-* `#[realia::any(env("foo"), env("bar"))]`
+* `#[realia::any(env("FOO"), env("bar"))]`
   * Checks if any of the conditions are met.
-* `#[realia::all(env("foo"), env("bar"))]`
+* `#[realia::all(env("FOO"), env("bar"))]`
   * Checks if all of the conditions are met.
-* `#[realia::attr(env("foo"), some_attr)]`
+* `#[realia::attr(env("FOO"), some_attr)]`
   * Applies `#[some_attr]` if the condition is met.
     You can also specify `const` this way.
 
