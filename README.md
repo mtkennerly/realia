@@ -16,6 +16,19 @@ Primary:
 * Executables:
   * `#[realia::cmd("foo")]`
     * Checks if the executable `foo` exists in the `PATH` environment variable.
+* Dependencies (accounts for target-specific ones, but not optional ones currently):
+  * `#[realia::dep("your-crate", "foo")]`
+    * Checks if your crate uses any version of the `foo` crate.
+  * `#[realia::dep("your-crate", "foo", "1.2.3")]`
+    * Checks if your crate uses the `foo` crate with exactly version 1.2.3.
+  * `#[realia::dep_since("your-crate", "foo", "1.2.3")]`
+    * Checks if your crate uses the `foo` crate with version 1.2.3 or newer.
+  * `#[realia::dep_before("your-crate", "foo", "1.2.3")]`
+    * Checks if your crate uses the `foo` crate with a version before 1.2.3.
+  * `#[realia::dep_from_registry("your-crate", "foo")]`
+    * Checks if your crate uses the `foo` crate from the registry (as opposed to
+      being a `git` or `path` dependency). This is useful if you have
+      [publishing fallbacks](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#multiple-locations).
 
 The above can be refined or augmented by these additional attributes:
 
@@ -30,8 +43,8 @@ The above can be refined or augmented by these additional attributes:
     You can also specify `const` this way.
 
 ## Triggering build on changed conditions
-To trigger builds when the conditions change, you'll need to include a
-`build.rs` in your project with the environment variables you check.
+If you use the `env` or `cmd` attributes,you'll need to include a `build.rs`
+in your project with any environment variables you check.
 
 ```rust
 fn main() {

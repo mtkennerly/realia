@@ -50,6 +50,81 @@ fn cmd_exists() {
 }
 
 #[test]
+fn dep_exists() {
+    #[realia::dep("realia", "syn")]
+    fn positive() -> bool {
+        true
+    }
+    assert!(positive());
+
+    #[realia::not(dep("realia", "reqwest"))]
+    fn negative() -> bool {
+        true
+    }
+    assert!(negative());
+}
+
+#[test]
+fn dep_equals() {
+    #[realia::dep("realia", "version-compare", "0.0.10")]
+    fn positive() -> bool {
+        true
+    }
+    assert!(positive());
+
+    #[realia::not(dep("realia", "version-compare", "0.0.7"))]
+    fn negative() -> bool {
+        true
+    }
+    assert!(negative());
+}
+
+#[test]
+fn dep_since() {
+    #[realia::dep_since("realia", "syn", "1.0.30")]
+    fn positive() -> bool {
+        true
+    }
+    assert!(positive());
+
+    #[realia::not(dep_since("realia", "syn", "999"))]
+    fn negative() -> bool {
+        true
+    }
+    assert!(negative());
+}
+
+#[test]
+fn dep_before() {
+    #[realia::dep_before("realia", "syn", "999")]
+    fn positive() -> bool {
+        true
+    }
+    assert!(positive());
+
+    #[realia::not(dep_before("realia", "syn", "1.0.30"))]
+    fn negative() -> bool {
+        true
+    }
+    assert!(negative());
+}
+
+#[test]
+fn dep_from_registry() {
+    #[realia::dep_from_registry("realia", "syn")]
+    fn positive() -> bool {
+        true
+    }
+    assert!(positive());
+
+    #[realia::not(dep_from_registry("realia", "realia"))]
+    fn negative() -> bool {
+        true
+    }
+    assert!(negative());
+}
+
+#[test]
 fn any() {
     #[realia::any(env("REALIA_EMPTY"), env("REALIA_UNDEFINED"))]
     fn positive() -> bool {

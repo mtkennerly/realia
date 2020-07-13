@@ -1,14 +1,46 @@
+use crate::dep::{get_dep, get_deps};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::{parenthesized, LitStr, Token};
+use version_compare::{CompOp, VersionCompare};
 
 pub enum Expr {
     Not(Box<Expr>),
     Any(Vec<Expr>),
     All(Vec<Expr>),
-    EnvExists(String),
-    EnvEquals(String, String),
-    CmdExists(String),
+    EnvExists {
+        name: String,
+    },
+    EnvEquals {
+        name: String,
+        value: String,
+    },
+    CmdExists {
+        name: String,
+    },
+    DepExists {
+        anchor: String,
+        name: String,
+    },
+    DepEquals {
+        anchor: String,
+        name: String,
+        version: String,
+    },
+    DepSince {
+        anchor: String,
+        name: String,
+        version: String,
+    },
+    DepBefore {
+        anchor: String,
+        name: String,
+        version: String,
+    },
+    DepFromRegistry {
+        anchor: String,
+        name: String,
+    },
 }
 
 impl Expr {
@@ -19,12 +51,29 @@ impl Expr {
             Not(expr) => !expr.eval(),
             Any(exprs) => exprs.iter().any(|e| e.eval()),
             All(exprs) => exprs.iter().all(|e| e.eval()),
-            EnvExists(name) => std::env::var(name).is_ok(),
-            EnvEquals(name, value) => match std::env::var(name) {
+            EnvExists { name } => std::env::var(name).is_ok(),
+            EnvEquals { name, value } => match std::env::var(name) {
                 Ok(x) => &x == value,
                 _ => false,
             },
-            CmdExists(name) => which::which(name).is_ok(),
+            CmdExists { name } => which::which(name).is_ok(),
+            DepExists { anchor, name } => get_dep(&anchor, &name).is_ok(),
+            DepEquals { anchor, name, version } => get_deps(&anchor).unwrap().iter().any(|dep| {
+                &dep.name == name && VersionCompare::compare_to(&dep.version, &version, &CompOp::Eq).unwrap()
+            }),
+            DepSince { anchor, name, version } => get_deps(&anchor).unwrap().iter().any(|dep| {
+                &dep.name == name && VersionCompare::compare_to(&dep.version, &version, &CompOp::Ge).unwrap()
+            }),
+            DepBefore { anchor, name, version } => get_deps(&anchor).unwrap().iter().any(|dep| {
+                &dep.name == name && VersionCompare::compare_to(&dep.version, &version, &CompOp::Lt).unwrap()
+            }),
+            DepFromRegistry { anchor, name } => get_deps(&anchor).unwrap().iter().any(|dep| {
+                &dep.name == name
+                    && match &dep.source {
+                        Some(source) => source.starts_with("registry+"),
+                        _ => false,
+                    }
+            }),
         }
     }
 }
@@ -37,6 +86,10 @@ mod keyword {
     syn::custom_keyword!(all);
     syn::custom_keyword!(env);
     syn::custom_keyword!(cmd);
+    syn::custom_keyword!(dep);
+    syn::custom_keyword!(dep_since);
+    syn::custom_keyword!(dep_before);
+    syn::custom_keyword!(dep_from_registry);
 }
 
 impl Parse for Expr {
@@ -52,6 +105,14 @@ impl Parse for Expr {
             Self::parse_env(input)
         } else if lookahead.peek(keyword::cmd) {
             Self::parse_cmd(input)
+        } else if lookahead.peek(keyword::dep) {
+            Self::parse_dep(input)
+        } else if lookahead.peek(keyword::dep_since) {
+            Self::parse_dep_since(input)
+        } else if lookahead.peek(keyword::dep_before) {
+            Self::parse_dep_before(input)
+        } else if lookahead.peek(keyword::dep_from_registry) {
+            Self::parse_dep_from_registry(input)
         } else {
             Err(lookahead.error())
         }
@@ -99,9 +160,12 @@ impl Expr {
         match paren.parse::<Token![,]>() {
             Ok(_) => {
                 let arg2: LitStr = paren.parse()?;
-                Ok(Expr::EnvEquals(arg1.value(), arg2.value()))
+                Ok(Expr::EnvEquals {
+                    name: arg1.value(),
+                    value: arg2.value(),
+                })
             }
-            Err(_) => Ok(Expr::EnvExists(arg1.value())),
+            Err(_) => Ok(Expr::EnvExists { name: arg1.value() }),
         }
     }
 
@@ -112,6 +176,78 @@ impl Expr {
         parenthesized!(paren in input);
         let arg1: LitStr = paren.parse()?;
 
-        Ok(Expr::CmdExists(arg1.value()))
+        Ok(Expr::CmdExists { name: arg1.value() })
+    }
+
+    fn parse_dep(input: ParseStream) -> Result<Self> {
+        input.parse::<keyword::dep>()?;
+
+        let paren;
+        parenthesized!(paren in input);
+        let arg1: LitStr = paren.parse()?;
+        paren.parse::<Token![,]>()?;
+        let arg2: LitStr = paren.parse()?;
+        match paren.parse::<Token![,]>() {
+            Ok(_) => {
+                let arg3: LitStr = paren.parse()?;
+                Ok(Expr::DepEquals {
+                    anchor: arg1.value(),
+                    name: arg2.value(),
+                    version: arg3.value(),
+                })
+            }
+            Err(_) => Ok(Expr::DepExists {
+                anchor: arg1.value(),
+                name: arg2.value(),
+            }),
+        }
+    }
+
+    fn parse_dep_since(input: ParseStream) -> Result<Self> {
+        input.parse::<keyword::dep_since>()?;
+
+        let paren;
+        parenthesized!(paren in input);
+        let arg1: LitStr = paren.parse()?;
+        paren.parse::<Token![,]>()?;
+        let arg2: LitStr = paren.parse()?;
+        paren.parse::<Token![,]>()?;
+        let arg3: LitStr = paren.parse()?;
+        Ok(Expr::DepSince {
+            anchor: arg1.value(),
+            name: arg2.value(),
+            version: arg3.value(),
+        })
+    }
+
+    fn parse_dep_before(input: ParseStream) -> Result<Self> {
+        input.parse::<keyword::dep_before>()?;
+
+        let paren;
+        parenthesized!(paren in input);
+        let arg1: LitStr = paren.parse()?;
+        paren.parse::<Token![,]>()?;
+        let arg2: LitStr = paren.parse()?;
+        paren.parse::<Token![,]>()?;
+        let arg3: LitStr = paren.parse()?;
+        Ok(Expr::DepBefore {
+            anchor: arg1.value(),
+            name: arg2.value(),
+            version: arg3.value(),
+        })
+    }
+
+    fn parse_dep_from_registry(input: ParseStream) -> Result<Self> {
+        input.parse::<keyword::dep_from_registry>()?;
+
+        let paren;
+        parenthesized!(paren in input);
+        let arg1: LitStr = paren.parse()?;
+        paren.parse::<Token![,]>()?;
+        let arg2: LitStr = paren.parse()?;
+        Ok(Expr::DepFromRegistry {
+            anchor: arg1.value(),
+            name: arg2.value(),
+        })
     }
 }

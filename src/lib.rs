@@ -6,7 +6,9 @@
 extern crate proc_macro;
 
 mod attr;
+mod dep;
 mod expr;
+mod metadata;
 
 use crate::attr::Then;
 use crate::expr::Expr;
@@ -68,6 +70,109 @@ pub fn env(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn cmd(args: TokenStream, input: TokenStream) -> TokenStream {
     cfg("cmd", args, input)
+}
+
+/// Checks whether a crate has a certain dependency and optionally if that
+/// dependency is a certain version.
+///
+/// The first argument is an "anchor crate", which should generally be your crate.
+/// Since this functionality is implemented by checking the output of
+/// `cargo metadata --manifest-path $CARGO_MANIFEST_DIR/Cargo.toml`,
+/// the anchor is used to ensure consistent results when `$CARGO_MANIFEST_DIR`
+/// changes (e.g., when building your crate directly vs when building a downstream crate).
+///
+/// This accounts for target-specific dependencies, but currently ignores any
+/// optional dependencies enabled by features.
+///
+/// # Example
+/// ```
+/// #[realia::dep("realia", "syn")]
+/// fn example() {
+///     println!("Realia depends on Syn");
+/// }
+/// ```
+///
+/// ```
+/// #[realia::dep("realia", "syn", "1.0.34")]
+/// fn example() {
+///     println!("Realia uses Syn 1.0.34 exactly");
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn dep(args: TokenStream, input: TokenStream) -> TokenStream {
+    cfg("dep", args, input)
+}
+
+/// Checks whether a crate has a certain dependency at or above a certain version.
+///
+/// The first argument is an "anchor crate", which should generally be your crate.
+/// Since this functionality is implemented by checking the output of
+/// `cargo metadata --manifest-path $CARGO_MANIFEST_DIR/Cargo.toml`,
+/// the anchor is used to ensure consistent results when `$CARGO_MANIFEST_DIR`
+/// changes (e.g., when building your crate directly vs when building a downstream crate).
+///
+/// This accounts for target-specific dependencies, but currently ignores any
+/// optional dependencies enabled by features.
+///
+/// # Example
+/// ```
+/// #[realia::dep_since("realia", "syn", "1.0.34")]
+/// fn example() {
+///     println!("Realia uses Syn 1.0.34 or newer");
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn dep_since(args: TokenStream, input: TokenStream) -> TokenStream {
+    cfg("dep_since", args, input)
+}
+
+/// Checks whether a crate has a certain dependency below a certain version.
+///
+/// The first argument is an "anchor crate", which should generally be your crate.
+/// Since this functionality is implemented by checking the output of
+/// `cargo metadata --manifest-path $CARGO_MANIFEST_DIR/Cargo.toml`,
+/// the anchor is used to ensure consistent results when `$CARGO_MANIFEST_DIR`
+/// changes (e.g., when building your crate directly vs when building a downstream crate).
+///
+/// This accounts for target-specific dependencies, but currently ignores any
+/// optional dependencies enabled by features.
+///
+/// # Example
+/// ```
+/// #[realia::dep_before("realia", "syn", "1.0.34")]
+/// fn example() {
+///     println!("Realia uses Syn 1.0.33 or older");
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn dep_before(args: TokenStream, input: TokenStream) -> TokenStream {
+    cfg("dep_before", args, input)
+}
+
+/// Checks whether a crate has a certain dependency installed from the registry
+/// (as opposed to being a Git dependency or a path dependency). This is useful
+/// if you have non-registry dependencies with a
+/// [registry fallback for publishing](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#multiple-locations).
+///
+/// The first argument is an "anchor crate", which should generally be your crate.
+/// Since this functionality is implemented by checking the output of
+/// `cargo metadata --manifest-path $CARGO_MANIFEST_DIR/Cargo.toml`,
+/// the anchor is used to ensure consistent results when `$CARGO_MANIFEST_DIR`
+/// changes (e.g., when building your crate directly vs when building a downstream crate).
+///
+/// This accounts for target-specific dependencies, but currently ignores any
+/// optional dependencies enabled by features.
+///
+/// # Example
+/// ```
+/// #[realia::dep_from_registry("realia", "syn")]
+/// fn example() {
+///     println!("Realia uses Syn from the registry");
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn dep_from_registry(args: TokenStream, input: TokenStream) -> TokenStream {
+    cfg("dep_from_registry", args, input)
 }
 
 /// Inverts another condition.
