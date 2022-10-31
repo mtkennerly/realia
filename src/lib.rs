@@ -10,8 +10,7 @@ mod dep;
 mod expr;
 mod metadata;
 
-use crate::attr::Then;
-use crate::expr::Expr;
+use crate::{attr::Then, expr::Expr};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::quote;

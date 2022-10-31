@@ -1,7 +1,10 @@
 use crate::dep::{get_dep, get_deps};
-use syn::parse::{Parse, ParseStream, Result};
-use syn::punctuated::Punctuated;
-use syn::{parenthesized, LitStr, Token};
+use syn::{
+    parenthesized,
+    parse::{Parse, ParseStream, Result},
+    punctuated::Punctuated,
+    LitStr, Token,
+};
 use version_compare::{CompOp, VersionCompare};
 
 pub enum Expr {
@@ -57,17 +60,17 @@ impl Expr {
                 _ => false,
             },
             CmdExists { name } => which::which(name).is_ok(),
-            DepExists { anchor, name } => get_dep(&anchor, &name).is_ok(),
-            DepEquals { anchor, name, version } => get_deps(&anchor).unwrap().iter().any(|dep| {
-                &dep.name == name && VersionCompare::compare_to(&dep.version, &version, &CompOp::Eq).unwrap()
+            DepExists { anchor, name } => get_dep(anchor, name).is_ok(),
+            DepEquals { anchor, name, version } => get_deps(anchor).unwrap().iter().any(|dep| {
+                &dep.name == name && VersionCompare::compare_to(&dep.version, version, &CompOp::Eq).unwrap()
             }),
-            DepSince { anchor, name, version } => get_deps(&anchor).unwrap().iter().any(|dep| {
-                &dep.name == name && VersionCompare::compare_to(&dep.version, &version, &CompOp::Ge).unwrap()
+            DepSince { anchor, name, version } => get_deps(anchor).unwrap().iter().any(|dep| {
+                &dep.name == name && VersionCompare::compare_to(&dep.version, version, &CompOp::Ge).unwrap()
             }),
-            DepBefore { anchor, name, version } => get_deps(&anchor).unwrap().iter().any(|dep| {
-                &dep.name == name && VersionCompare::compare_to(&dep.version, &version, &CompOp::Lt).unwrap()
+            DepBefore { anchor, name, version } => get_deps(anchor).unwrap().iter().any(|dep| {
+                &dep.name == name && VersionCompare::compare_to(&dep.version, version, &CompOp::Lt).unwrap()
             }),
-            DepFromRegistry { anchor, name } => get_deps(&anchor).unwrap().iter().any(|dep| {
+            DepFromRegistry { anchor, name } => get_deps(anchor).unwrap().iter().any(|dep| {
                 &dep.name == name
                     && match &dep.source {
                         Some(source) => source.starts_with("registry+"),

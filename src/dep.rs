@@ -22,9 +22,7 @@ pub fn get_deps(anchor_name: &str) -> Result<Vec<DepInfo>, Error> {
     let manifest_dir = crate::metadata::get_manifest_dir()?;
     let bad_file = format!(
         "{}/target/package/{}-{}/Cargo.lock",
-        manifest_dir,
-        anchor_name,
-        anchor.version.to_string()
+        manifest_dir, anchor_name, anchor.version
     );
     // If we can't remove, assume it doesn't exist.
     let _ = std::fs::remove_file(bad_file);
@@ -32,10 +30,7 @@ pub fn get_deps(anchor_name: &str) -> Result<Vec<DepInfo>, Error> {
     let mut deps = vec![DepInfo {
         name: anchor.name.to_owned(),
         version: anchor.version.to_string(),
-        source: match &anchor.source {
-            Some(source) => Some(source.to_string()),
-            None => None,
-        },
+        source: anchor.source.as_ref().map(|source| source.to_string()),
     }];
     for dependency in &anchor.dependencies {
         let position = match metadata.packages.iter().position(|x| x.name == dependency.name) {
@@ -46,10 +41,8 @@ pub fn get_deps(anchor_name: &str) -> Result<Vec<DepInfo>, Error> {
         let applicable = match &dependency.target {
             Some(target) => {
                 let default_target = crate::metadata::default_target()?;
-                match target_spec::eval(&target.to_string(), &std::env::var("TARGET").unwrap_or(default_target)) {
-                    Ok(Some(true)) => true,
-                    _ => false,
-                }
+                target_spec::eval(&target.to_string(), &std::env::var("TARGET").unwrap_or(default_target))
+                    == Ok(Some(true))
             }
             _ => true,
         };
@@ -66,7 +59,7 @@ pub fn get_deps(anchor_name: &str) -> Result<Vec<DepInfo>, Error> {
 }
 
 pub fn get_dep(anchor_name: &str, dep_name: &str) -> Result<DepInfo, Error> {
-    for dep in get_deps(&anchor_name)? {
+    for dep in get_deps(anchor_name)? {
         if dep.name == dep_name {
             return Ok(dep);
         }

@@ -1,7 +1,9 @@
 use crate::expr::Expr;
 use proc_macro2::TokenStream;
-use syn::parse::{Parse, ParseStream, Result};
-use syn::Token;
+use syn::{
+    parse::{Parse, ParseStream, Result},
+    Token,
+};
 
 pub struct Args {
     pub condition: Expr,

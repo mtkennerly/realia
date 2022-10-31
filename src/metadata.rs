@@ -3,9 +3,11 @@
 
 use anyhow::{anyhow, Context, Error};
 use cargo_metadata::Metadata;
-use std::env;
-use std::ffi::OsString;
-use std::process::{Command, Stdio};
+use std::{
+    env,
+    ffi::OsString,
+    process::{Command, Stdio},
+};
 
 fn check_arg(name: &str) -> Option<String> {
     let mut args = env::args().skip_while(|val| !val.starts_with(&name));
@@ -56,8 +58,8 @@ pub fn default_target() -> Result<String, Error> {
 
     for line in output.lines() {
         let prefix = "host: ";
-        if line.starts_with(prefix) {
-            return Ok(line[prefix.len()..].trim().to_string());
+        if let Some(stripped) = line.strip_prefix(prefix) {
+            return Ok(stripped.trim().to_string());
         }
     }
 
