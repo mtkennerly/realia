@@ -245,7 +245,7 @@ fn try_cfg(top: &str, args: TokenStream, input: TokenStream) -> Result<TokenStre
 /// You can also specify `const` this way.
 ///
 /// # Example
-/// ```
+/// ```no_run
 /// #[test]
 /// #[realia::attr(not(cmd("git")), ignore)]
 /// fn some_test_that_requires_git() {}
