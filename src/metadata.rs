@@ -10,7 +10,7 @@ use std::{
 };
 
 fn check_arg(name: &str) -> Option<String> {
-    let mut args = env::args().skip_while(|val| !val.starts_with(&name));
+    let mut args = env::args().skip_while(|val| !val.starts_with(name));
     match args.next() {
         // Get `bar` from `--foo bar`:
         Some(ref v) if v == name => Some(args.next().unwrap()),
